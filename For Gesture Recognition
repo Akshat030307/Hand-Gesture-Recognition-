@@ -1,0 +1,41 @@
+import cv2
+import mediapipe as mp
+import pyautogui
+
+mp_hands = mp.solutions.hands
+hands = mp_hands.Hands()
+cap = cv2.VideoCapture(0)
+
+def detect_gesture(hand_landmarks):
+    thumb_tip = hand_landmarks.landmark[4]
+    thumb_base = hand_landmarks.landmark[2]
+    index_tip = hand_landmarks.landmark[8]
+
+    thumb_up = thumb_tip.y < thumb_base.y
+    index_folded = abs(index_tip.y - hand_landmarks.landmark[6].y) < 0.05
+
+    if thumb_up and index_folded:
+        return "Thumbs Up"
+    elif thumb_tip.y > thumb_base.y and abs(index_tip.y - hand_landmarks.landmark[6].y) < 0.05:
+        return "Fist"
+    else:
+        return " Gesture not Recognized"
+
+while cap.isOpened():
+    ret, frame = cap.read()
+    if not ret:
+        break
+
+    image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    results = hands.process(image)
+
+    if results.multi_hand_landmarks:
+        for hand_landmarks in results.multi_hand_landmarks:
+            gesture = detect_gesture(hand_landmarks)
+            print(gesture)
+    cv2.imshow('Gesture Control', frame)
+    if cv2.waitKey(10) & 0xFF == ord('q'):
+        break
+
+cap.release()
+cv2.destroyAllWindows()
